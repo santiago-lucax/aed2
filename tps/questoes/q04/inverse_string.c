@@ -1,3 +1,9 @@
+/*
+ * Nome: Lucas Santiago Pereira
+ * Matricula: 897498
+ * Data: 23/03/2026
+*/
+
 // Bibliotecas
 #include <stdio.h>
 #include <stdlib.h>
