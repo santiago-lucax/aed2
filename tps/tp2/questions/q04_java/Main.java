@@ -1,5 +1,12 @@
-// Biblioteca padrão para leitura
+/*
+ * Nome: Lucas Santiago Pereira
+ * Matricula: 897498
+*/
+
+// biblioteca padrão para leitura
 import java.util.Scanner;
+import java.io.File;
+import java.io.PrintWriter;
 
 /*
  * classe para armazenar métodos e funções úteis para o projeto
@@ -83,8 +90,76 @@ class Utils {
         return acumulado;
     }
 
-    /*ADICIONAR UM METODO SPLIT PARA SEPARAR AS LINHAS DO CSV!!!*/
+    // função para dividir uma String em substrings
+    public static String[] splitLine(String texto, char delimitador) {
+        int cnt = 0; // quantidade de partes
+        for (int i = 0; i < texto.length(); i++) {
+            if (texto.charAt(i) == delimitador) cnt++; // toda vez que encontrar o delimitador, cnt++
+        }
 
+        String[] partes = new String[cnt + 1]; // número de partes é igual quanitdade de delimitadores +1
+
+        int indiceArray = 0;
+        int inicioCorte = 0;
+
+        for (int i = 0; i < texto.length(); i++) {
+            if (texto.charAt(i) == delimitador) {
+                partes[indiceArray] = extrairSubString(texto, inicioCorte, i);
+                indiceArray++;
+                inicioCorte = i + 1;
+            }
+        }
+
+        // adicionar última substring
+        partes[indiceArray] = extrairSubString(texto, inicioCorte, texto.length());
+
+        return partes;
+    }
+
+    // função para extrair as subtrings
+    public static String extrairSubString(String str, int inicio, int fim) {
+        char[] novoArray = new char[fim - inicio];
+        int j = 0;
+        for (int i = inicio; i < fim; i++) {
+            novoArray[j] = str.charAt(i);
+            j++;
+        }
+
+        return new String(novoArray);
+    }
+
+    // função para contar quantidade de ocorrencia de determinado caractere na string
+    public static int contadorCaractere(String str, char c) {
+        int cnt = 0;
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) == c) cnt++;
+        }
+        return cnt;
+    }
+
+    // função para comparar se duas Strings são idênticas
+    public static boolean isEquals(String s1, String s2) {
+        boolean ok = true;
+        if (s1.length() != s2.length()) ok = false;
+        else {
+            int length = s1.length();
+            for (int i = 0; i < length; i++) {
+                if (s1.charAt(i) != s2.charAt(i)) ok = false;
+            }
+        }
+
+        return ok;
+    }
+
+    // função para ler uma string e identificar se nela está escrito true ou false
+    public static boolean toBool(String str) {
+        boolean ok;
+        // tratamento para strings para evitar erros com espaços em branco extras do csv
+        if (isEquals(str.trim(), "true")) ok = true;
+        else if (isEquals(str.trim(), "false")) ok = false;
+        else throw new IllegalArgumentException("String não pode ser convertida para boolean.");
+        return ok;
+    }
 } // fim Utils
 
 /*
@@ -107,6 +182,11 @@ class Data {
         setAno(ano);
         setMes(mes);
         setDia(dia);
+    }
+
+    // construtor com parâmetro que inicializa com string
+    public Data(String dataStr) {
+        parseData(dataStr);
     }
 
     // get e set para ano
@@ -211,6 +291,11 @@ class Hora {
     public Hora(int hora, int minuto) {
         setHora(hora);
         setMin(minuto);
+    }
+
+    // construtor que inicializa com string
+    public Hora(String horaStr) {
+        parseHora(horaStr);
     }
 
     // get e set para horas
@@ -401,39 +486,246 @@ class Restaurante {
     }
 
     // get e set para data de abertura
-    public Data setDataAbertura() { return this.dataAbertura; }
+    public Data getDataAbertura() { return this.dataAbertura; }
     public void setDataAbertura(Data dataAbertura) {
         if (dataAbertura == null) throw new IllegalArgumentException("Data de abertura não pode ser nula.");
         this.dataAbertura = dataAbertura;
     }
 
     // get e set para status
-    public boolean getStatus() { return this.aberto; }
+    public boolean getAberto() { return this.aberto; }
     public void setAberto(boolean aberto) {
         this.aberto = aberto;
     }
 
     // método para ler a string e adaptar a estrutura da classe
     public void parseRestaurante(String restauranteStr) {
-        int tamanho = restauranteStr.length();
-        int i = 0;
-        while (i < tamanho) {
+        String[] partes = Utils.splitLine(restauranteStr, ','); // dividir string lida em substrings e atribuí-las
+        String[] tmp = Utils.splitLine(partes[7], '-'); // horario de abertura e fechamento
+        
+        setId(Utils.toInt(partes[0])); // posição 0: id
+        setNome(partes[1]); // posição 1: nome
+        setCidade(partes[2]); // posição 2: cidade
+        setCapacidade(Utils.toInt(partes[3])); // posição 3: capacidade
+        setAvaliacao(Utils.toDouble(partes[4])); // posição 4: avaliação
+        setTiposCozinha(Utils.splitLine(partes[5], ';')); // posição 5: tipos (separados por ponto e vírgula)
+        setFaixaPreco(Utils.contadorCaractere(partes[6], '$')); // posição 6: quantidade de cifrões
+        setHorarioAbertura(new Hora(tmp[0])); // primeira metade do horário
+        setHorarioFechamento(new Hora(tmp[1])); // segunda metade do horário
+        setDataAbertura(new Data(partes[8])); // posição 8: data
+        setAberto(Utils.toBool(partes[9])); // posição 9: status booleano
+    }
 
+    // função para formatar e exibir dados do restaurante em uma string
+    public String formatar() {
+        // ler tipos e atribuí-los a uma string temporária
+        String tipos = "";
+        for (int i = 0; i < tiposCozinha.length; i++) {
+            if (i < tiposCozinha.length - 1) tipos += tiposCozinha[i] + ",";
+            else tipos += tiposCozinha[i]; // último elemento não recebe vírgula no final
         }
+
+        // contar quantos cifrões representam a faixa de preço
+        String cifroes = "";
+        for (int i = 0; i < getFaixaDePreco(); i++) cifroes += '$';
+
+        // formatar de acordo com a saída esperada (ex: pub.out)
+        String tmp = "["
+            + getId() + " ## "
+            + getNome() + " ## "
+            + getCidade() + " ## "
+            + getCapacidade() + " ## "
+            + getAvaliacao() + " ## "
+            + "[" + tipos + "]" + " ## "
+            + cifroes + " ## "
+            + getHorarioAbertura().formatar() + "-" + getHorarioFechamento().formatar() + " ## "
+            + getDataAbertura().formatar() + " ## "
+            + getAberto() +
+        "]";
+
+        return tmp; // retornar string temporária
     }
 }
 
-public class ColecaoRestaurantes {
-    public static void main(String[] args) {
-        Data data = new Data(19, 11, 2006);
-        String tmp = data.formatar();
-        System.out.println(tmp);
+/*
+ * classe para gerenciar um arranjo de restaurantes lidos de um arquivo csv
+*/
+class ColecaoRestaurantes {
+    // atributos privados
+    private int tamanho; // quantidade de restaurantes da coleção
+    private Restaurante[] restaurantes; // arranjo com os restaurantes
 
-        Hora hora = new Hora(04, 30);
-        String temp = hora.formatar();
-        System.out.println(temp);
-
-        Restaurante restaurante = new Restaurante();
-        
+    // construtor sem parâmetros
+    public ColecaoRestaurantes() {
+        this.tamanho = 0;
+        this.restaurantes = new Restaurante[0];
     }
-} // Fim main
+
+    // get para o tamanho da coleção
+    public int getTamanho() { return this.tamanho; }
+
+    // get para o arranjo de restaurantes
+    public Restaurante[] getRestaurantes() { return this.restaurantes; }
+
+    // lê o arquivo CSV, cria os restaurantes e configura a coleção
+    public void lerCsv(String path) {
+        try {
+            File arquivo = new File(path);
+            
+            // --- primeiro passo: contar as linhas válidas para redimensionar o arranjo ---
+            Scanner contador = new Scanner(arquivo);
+            int quantidadeLinhas = 0;
+            
+            // pula a primeira linha (cabeçalho) se ela existir
+            if (contador.hasNextLine()) contador.nextLine(); 
+            
+            // laço para contar quantas linhas de dados existem
+            while (contador.hasNextLine()) {
+                String linhaAtual = contador.nextLine();
+                // conta apenas se a linha não for vazia (evita posições nulas no arranjo)
+                if (linhaAtual.trim().length() > 0) {
+                    quantidadeLinhas++;
+                }
+            }
+            contador.close(); // fecha o leitor após contar
+            
+            // define o tamanho da coleção e cria o arranjo com o tamanho exato
+            this.tamanho = quantidadeLinhas;
+            this.restaurantes = new Restaurante[this.tamanho];
+            
+            // --- segundo passo: ler os dados e preencher o arranjo ---
+            Scanner leitor = new Scanner(arquivo);
+            
+            // pula o cabeçalho novamente na segunda leitura
+            if (leitor.hasNextLine()) leitor.nextLine(); 
+            
+            int i = 0; // controlador da posição no arranjo
+            
+            // laço para percorrer os dados
+            while (leitor.hasNextLine()) {
+                String linhaAtual = leitor.nextLine();
+                
+                // validação simples para ignorar linhas vazias e evitar erros
+                if (linhaAtual.trim().length() > 0) {
+                    Restaurante r = new Restaurante(); // instancia novo restaurante
+                    r.parseRestaurante(linhaAtual); // utiliza sua função para formatar o objeto
+                    this.restaurantes[i] = r; // guarda no arranjo
+                    i++; // avança a posição
+                }
+            }
+            leitor.close(); // fecha o leitor de dados
+            
+        } catch (Exception e) {
+            // envia mensagem caso ocorra algum erro (ex: arquivo não encontrado)
+            System.out.println("Erro na leitura do arquivo: " + e.getMessage());
+        }
+    }
+
+    // lê o dataset do arquivo CSV padrão e retorna a coleção com os restaurantes
+    public static ColecaoRestaurantes lerCsv() {
+        ColecaoRestaurantes colecao = new ColecaoRestaurantes();
+        colecao.lerCsv("/tmp/restaurantes.csv"); // chama o método da instância apontando para o arquivo no verde
+        return colecao; // retorna a coleção preenchida
+    }
+} // fim ColecaoRestaurantes
+
+/*
+ * classe principal para execução do programa e leitura das entradas
+*/
+public class Main {
+    // variáveis globais para registro de métricas de desempenho
+    public static int comparacoes = 0;
+    public static int movimentacoes = 0;
+
+    /*
+     * algoritmo de ordenação por inserção
+     * ordena o arranjo de restaurantes pelo atributo cidade
+    */
+    public static void insercao(Restaurante[] arr, int n) {
+        for (int i = 1; i < n; i++) {
+            Restaurante tmp = arr[i];
+            int j = i - 1;
+            boolean continuar = true; // flag para controle do laço sem usar break
+
+            // laço para encontrar a posição correta de inserção
+            while (j >= 0 && continuar) {
+                comparacoes++; // incrementar contador de comparações entre chaves (cidade)
+                
+                if (arr[j].getCidade().compareTo(tmp.getCidade()) > 0) {
+                    arr[j + 1] = arr[j]; // movimentar o elemento para a direita
+                    movimentacoes++;
+                    j--;
+                } else {
+                    continuar = false; // encerra o laço preservando o valor correto de 'j'
+                }
+            }
+            arr[j + 1] = tmp; // inserir o elemento na posição correta
+            movimentacoes += 2; // contabiliza a ida para tmp e o retorno para o arranjo
+        }
+    }
+
+    /*
+     * método principal para execução do programa e leitura das entradas
+    */
+    public static void main(String[] args) {
+        // carregar os dados do arquivo csv para a memória
+        ColecaoRestaurantes colecaoTotal = ColecaoRestaurantes.lerCsv();
+        Restaurante[] restaurantesCsv = colecaoTotal.getRestaurantes();
+        int tamanhoTotal = colecaoTotal.getTamanho();
+
+        Restaurante[] selecionados = new Restaurante[1000]; // arranjo para armazenar os pesquisados
+        int n = 0;
+        Scanner sc = new Scanner(System.in);
+        boolean continuarLeitura = true; // flag para controle do laço principal
+
+        // laço para ler os IDs da entrada padrão e filtrar do dataset original
+        while (continuarLeitura && sc.hasNextLine()) {
+            String linhaEntrada = sc.nextLine().trim();
+
+            if (linhaEntrada.length() > 0) {
+                int idBuscado = Utils.toInt(linhaEntrada);
+
+                if (idBuscado == -1) {
+                    continuarLeitura = false; // flag para encerrar a leitura conforme pub.in
+                } else {
+                    boolean encontrou = false; // flag para controle da busca linear
+
+                    // busca linear para selecionar o restaurante e colocar no array de ordenação
+                    for (int i = 0; i < tamanhoTotal && !encontrou; i++) {
+                        if (restaurantesCsv[i] != null && restaurantesCsv[i].getId() == idBuscado) {
+                            selecionados[n++] = restaurantesCsv[i];
+                            encontrou = true; // encerra a iteração do for graças a flag
+                        }
+                    }
+                }
+            }
+        }
+
+        // marcar o tempo inicial para o log
+        long inicio = System.currentTimeMillis();
+
+        // executar a ordenação por inserção utilizando o atributo cidade
+        insercao(selecionados, n);
+
+        // marcar o tempo final
+        long fim = System.currentTimeMillis();
+        long tempoTotal = fim - inicio;
+
+        // exibir os registros ordenados na saída padrão conforme o formato
+        for (int i = 0; i < n; i++) {
+            System.out.println(selecionados[i].formatar());
+        }
+
+        // geração do arquivo de log com as métricas da execução
+        try {
+            PrintWriter log = new PrintWriter(new File("897498_insercao.txt"));
+            // formato: matrícula [tab] comparações [tab] movimentações [tab] tempo
+            log.printf("897498\t%d\t%d\t%d\n", comparacoes, movimentacoes, tempoTotal);
+            log.close(); // fechar o escritor
+        } catch (Exception e) {
+            System.out.println("Erro ao criar arquivo de log.");
+        }
+
+        sc.close(); // fechar scanner
+    }
+}
