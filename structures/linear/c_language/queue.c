@@ -60,7 +60,7 @@ bool is_empty(Queue* queue) {
     return queue->last == 0;
 }
 
-// print_queue to display the stack on the screen
+// print_queue to display the queue on the screen
 void print_queue(Queue* queue) {
     if (queue) {
         int i = 0;
