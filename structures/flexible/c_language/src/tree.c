@@ -53,6 +53,16 @@ Node* insert_rec(Node *root, int x) {
     return tmp;
 }
 
+// method for insert with two pointers
+void insert_two_pointers(Node **root, int x) {
+    if(root != null) {
+        if ((*root) == null) (*root) = new_node(x);
+        else if (x < (*root)->element) insert_two_pointers(&(*root)->left, x);
+        else if (x > (*root)->element) insert_two_pointers(&(*root)->right, x);
+        else perror("Error.\n");
+    } else perror("Error.\n");
+}
+
 // call for a recursive function
 void insert(Tree *tree, int x) {
     tree->root = insert_rec(tree->root, x);
@@ -76,9 +86,7 @@ void print_tree(Tree *tree) {
 int main(int argc, char *argv[]) {
     Tree *tree = new_tree();
     insert(tree, 4);
-    insert(tree, 1);
-    insert(tree, 3);
-    insert(tree, 5);
+    insert_two_pointers(&(tree->root), 3);
 
     print_tree(tree);
 
