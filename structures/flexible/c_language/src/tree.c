@@ -53,6 +53,11 @@ Node* insert_rec(Node *root, int x) {
     return tmp;
 }
 
+// call for a recursive insert function
+void insert(Tree *tree, int x) {
+    tree->root = insert_rec(tree->root, x);
+}
+
 // method for insert with two pointers
 void insert_two_pointers(Node **root, int x) {
     if(root != null) {
@@ -63,9 +68,19 @@ void insert_two_pointers(Node **root, int x) {
     } else perror("Error.\n");
 }
 
-// call for a recursive function
-void insert(Tree *tree, int x) {
-    tree->root = insert_rec(tree->root, x);
+// verify if two trees are mirror
+bool is_mirror(Node *root1, Node *root2) {
+    bool ok = false;
+    if (root1 == null && root2 == null) ok = true; // if both are empty
+    else if (root1 == null || root2 == null) ok = false; // if only an empty one
+    else {
+        // if elements are equals
+        if (root1->element == root2->element) {
+            ok = is_mirror(root1->left, root2->right) && is_mirror(root1->right, root2->left);
+        } else ok = false; // if elements are differents
+    }
+
+    return ok;
 }
 
 // method for print tree
