@@ -6,9 +6,13 @@
 // bibliotecas padrao permitidas
 #include <stdio.h>
 #include <stdlib.h> // necessario para malloc/free e substituicao do 'new'
-#include <stdbool.h>
 #include <string.h> // necessario para strcmp e strcat
 #include <time.h> // para utilizar o clock()
+
+#define null NULL // nulo mais apresentavel
+#define bool short // definir bool como um inteiro curto
+#define true 1 // true = 1
+#define false 0 // false 0
 
 /*
  * funcoes para armazenar metodos uteis para o projeto
@@ -36,12 +40,13 @@ void trim(char *str) {
     for (i = 0; i <= fim - inicio; i++) {
         str[i] = str[inicio + i];
     }
+
     str[i] = '\0';
 }
 
 // função para tranformar string em um inteiro
 int to_int(char *s) {
-    if (s == NULL || strlen(s) == 0) return 0; // fallback para c
+    if (s == null || strlen(s) == 0) return 0; // fallback para c
 
     bool is_negative = false; // variavel para identificar se numero e ou nao negativo
     int acumulado = 0; // variavel do valor numerico da string
@@ -67,7 +72,7 @@ int to_int(char *s) {
 
 // função para transformar string em um double
 double to_double(char *s) {
-    if (s == NULL || strlen(s) == 0) return 0.0;
+    if (s == null || strlen(s) == 0) return 0.0;
 
     bool is_negative = false;
     double acumulado = 0.0; // variavel do valor numerico da string
@@ -329,7 +334,7 @@ typedef struct {
 // lê o arquivo csv, cria os restaurantes e configura a colecao
 void ler_csv(ColecaoRestaurantes *colecao, const char *path) {
     FILE *arquivo = fopen(path, "r");
-    if (arquivo == NULL) {
+    if (arquivo == null) {
         printf("Erro na leitura do arquivo.\n");
         return;
     }
@@ -339,9 +344,9 @@ void ler_csv(ColecaoRestaurantes *colecao, const char *path) {
     char linha[2000];
 
     // pula a primeira linha (cabecalho) se ela existir
-    if (fgets(linha, sizeof(linha), arquivo) != NULL) {
+    if (fgets(linha, sizeof(linha), arquivo) != null) {
         // laco para contar quantas linhas de dados existem
-        while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+        while (fgets(linha, sizeof(linha), arquivo) != null) {
             trim(linha);
             // conta apenas se a linha nao for vazia
             if (strlen(linha) > 0) {
@@ -358,11 +363,11 @@ void ler_csv(ColecaoRestaurantes *colecao, const char *path) {
     rewind(arquivo); // volta ao inicio do arquivo para segunda leitura
 
     // pula o cabecalho novamente na segunda leitura
-    if (fgets(linha, sizeof(linha), arquivo) != NULL) {
+    if (fgets(linha, sizeof(linha), arquivo) != null) {
         int i = 0; // controlador da posicao no arranjo
         
         // laco para percorrer os dados
-        while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+        while (fgets(linha, sizeof(linha), arquivo) != null) {
             trim(linha);
             // validacao simples para ignorar linhas vazias e evitar erros
             if (strlen(linha) > 0) {
@@ -381,28 +386,41 @@ int comparacoes = 0;
 int movimentacoes = 0;
 
 /*
- * algoritmo de ordenação por seleção
- * ordena o arranjo de restaurantes pelo atributo nome em ordem crescente
+    * ERROOOOOO CONCERTA DEPOIS!!
+    * algoritmo de ordenação por inserção
+    * ordena o arranjo de restaurantes pelo atributo cidade
 */
-void selecao(Restaurante *arr, int n) {
-    for (int i = 0; i < n - 1; i++) {
-        int menor = i; // assume que o atual é o menor elemento
-        
-        // laço para encontrar o menor elemento no restante do arranjo
-        for (int j = i + 1; j < n; j++) {
-            comparacoes++; // incrementar contador de comparações entre chaves (nome)
-            if (strcmp(arr[j].nome, arr[menor].nome) < 0) {
-                menor = j; // atualiza o índice do menor elemento encontrado
+void insercao(Restaurante *arr, int n) {
+    for (int i = 1; i < n; i++) {
+        Restaurante tmp = arr[i];
+        int j = i - 1;
+        bool continuar = true; // flag para controle do laço sem usar break
+
+        // laço para encontrar a posição correta de inserção
+        while (j >= 0 && continuar) {
+            comparacoes++; // incrementar contador de comparações entre chaves (cidade)
+            int cmp = strcmp(arr[j].cidade, tmp.cidade);
+
+            if (cmp > 0) {
+                arr[j + 1] = arr[j];
+                movimentacoes++;
+                j--;
+            } else if (cmp == 0) {
+                comparacoes++;
+                if (strcmp(arr[j].cidade, tmp.cidade) > 0) {
+                    arr[j + 1] = arr[j]; // movimentar o elemento para a direita
+                    movimentacoes++;
+                    j--;
+                } else {
+                    continuar = false; // encerra o laço preservando o valor correto de 'j'
+                }
+            } else {
+                continuar = false;
             }
         }
 
-        // realizar a troca dos elementos caso o menor não seja o atual
-        if (menor != i) {
-            Restaurante temp = arr[i];
-            arr[i] = arr[menor];
-            arr[menor] = temp;
-            movimentacoes += 3; // swap físico contabilizado como 3 movimentações
-        }
+        arr[j + 1] = tmp; // inserir o elemento na posição correta
+        movimentacoes += 2; // contabiliza a ida para tmp e o retorno para o arranjo
     }
 }
 
@@ -410,18 +428,19 @@ void selecao(Restaurante *arr, int n) {
  * função principal para execução do programa e leitura das entradas
 */
 int main() {
-    // carregar os dados do arquivo csv para a memoria
-    ColecaoRestaurantes colecao_total;
-    ler_csv(&colecao_total, "/tmp/restaurantes.csv"); // utiliza sua lógica de leitura dinâmica
+    ColecaoRestaurantes colecao_total; // carregar os dados do arquivo csv para a memoria
+    // ler_csv(&colecao_total, "/tmp/restaurantes.csv"); // utiliza sua lógica de leitura dinâmica
+    ler_csv(&colecao_total, "restaurantes.csv"); // utiliza sua lógica de leitura dinâmica
+    printf("DEBUG: CSV lido com %d itens\n", colecao_total.tamanho);
 
-    // Restaurante selecionados[1000]; // só funciona no Linux por permitir stack maior, ja no windows não funciona
+    // Restaurante selecionados[1000]; // só funciona no Linux por permitir stack maior, ja no Windows não funciona
     Restaurante *selecionados = (Restaurante*)malloc(1000 * sizeof(Restaurante)); // arranjo para armazenar apenas os pesquisados
     int n = 0;
     char linha_entrada[100];
     bool continuar_leitura = true;
 
     // laco para ler os IDs da entrada padrao e filtrar do dataset original
-    while (continuar_leitura && fgets(linha_entrada, sizeof(linha_entrada), stdin) != NULL) {
+    while (continuar_leitura && fgets(linha_entrada, sizeof(linha_entrada), stdin) != null) {
         trim(linha_entrada);
         if (strlen(linha_entrada) > 0) {
             int id_buscado = to_int(linha_entrada);
@@ -433,7 +452,7 @@ int main() {
                 for (int i = 0; i < colecao_total.tamanho; i++) {
                     if (colecao_total.restaurantes[i].id == id_buscado) {
                         selecionados[n++] = colecao_total.restaurantes[i];
-                        i = colecao_total.tamanho; // "break" respeitando seu estilo de flags
+                        i = colecao_total.tamanho;
                     }
                 }
             }
@@ -444,13 +463,13 @@ int main() {
     clock_t inicio = clock();
 
     // executar a ordenação por seleção utilizando o atributo nome
-    selecao(selecionados, n);
+    insercao(selecionados, n);
 
     // marcar o tempo final
     clock_t fim = clock();
     double tempo_total = ((double)(fim - inicio) / CLOCKS_PER_SEC) * 1000.0;
 
-    // exibir os registros ordenados na saída padrão conforme o padrão esperado
+    // exibir os k primeiros registros
     for (int i = 0; i < n; i++) {
         char buffer_saida[2000];
         formatar_restaurante(&(selecionados[i]), buffer_saida);
@@ -460,7 +479,7 @@ int main() {
     // geração do arquivo de log com as métricas da execução
     // formato: matrícula [tab] comparações [tab] movimentações [tab] tempo
     FILE *log = fopen("897498_selecao.txt", "w");
-    if (log != NULL) {
+    if (log != null) {
         fprintf(log, "897498\t%d\t%d\t%.4f", comparacoes, movimentacoes, tempo_total);
         fclose(log); // fechar o ponteiro de arquivo
     }
